@@ -5,6 +5,7 @@ import Logo from './components/logo/logo';
 import ImageLinkForm from './components/imagelinkform/imagelinkform';
 import FoodRecognition from './components/foodrecognition/foodrecognition';
 import Signin from './components/signin/signin';
+import Register from './components/register/register';
 import Rank from './components/rank/rank';
 import 'tachyons';
 import Particles from 'react-particles-js';
@@ -33,7 +34,8 @@ class App extends Component {
       input:'' , 
       imageUrl:'',
       ingredients: {},
-      route: 'signin',  
+      route: 'signin', 
+      isSignedIn: false, 
     }
   }
 
@@ -62,6 +64,11 @@ class App extends Component {
   }
 
   onRouteChange = (route) => {
+    if(route === 'signout') {
+      this.setState({isSignedIn: false})
+    } else if(route === 'home') {
+      this.setState({isSignedIn: true})
+    }
     this.setState({route: route});
   }
 
@@ -71,15 +78,20 @@ class App extends Component {
         <Particles className='particles'
         params={particlesOptions}
         />
-        <Navigation onRouteChange={this.onRouteChange}/>
-        { this.state.route === 'signin'
-          ?<Signin onRouteChange={this.onRouteChange}/>
-          :<div>
+        <Navigation isSignedIn={this.state.isSignedIn} onRouteChange={this.onRouteChange}/>
+        { this.state.route === 'home'
+          ?<div>
               <Logo/>
               <Rank/>
               <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
               <FoodRecognition imageUrl={this.state.imageUrl}/>
             </div>
+          : (
+              this.state.route === 'signin'
+              ?<Signin onRouteChange={this.onRouteChange}/>
+              :<Register onRouteChange={this.onRouteChange}/>
+            )
+          
         }
       </div>
     );
