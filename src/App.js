@@ -4,6 +4,7 @@ import Navigation from './components/navigation/navigation';
 import Logo from './components/logo/logo';
 import ImageLinkForm from './components/imagelinkform/imagelinkform';
 import FoodRecognition from './components/foodrecognition/foodrecognition';
+import Signin from './components/signin/signin';
 import Rank from './components/rank/rank';
 import 'tachyons';
 import Particles from 'react-particles-js';
@@ -31,7 +32,8 @@ class App extends Component {
     this.state = {
       input:'' , 
       imageUrl:'',
-      ingredients: {},  
+      ingredients: {},
+      route: 'signin',  
     }
   }
 
@@ -59,17 +61,26 @@ class App extends Component {
       .catch(err => console.log(err))
   }
 
+  onRouteChange = (route) => {
+    this.setState({route: route});
+  }
+
   render() {
     return (
       <div className="App">
         <Particles className='particles'
         params={particlesOptions}
         />
-        <Navigation/>
-        <Logo/>
-        <Rank/>
-        <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
-        <FoodRecognition imageUrl={this.state.imageUrl}/>
+        <Navigation onRouteChange={this.onRouteChange}/>
+        { this.state.route === 'signin'
+          ?<Signin onRouteChange={this.onRouteChange}/>
+          :<div>
+              <Logo/>
+              <Rank/>
+              <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
+              <FoodRecognition imageUrl={this.state.imageUrl}/>
+            </div>
+        }
       </div>
     );
   }
