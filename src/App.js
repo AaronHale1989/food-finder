@@ -9,7 +9,6 @@ import Register from './components/register/register';
 import Rank from './components/rank/rank';
 import 'tachyons';
 import Particles from 'react-particles-js';
-import Clarifai from 'clarifai';
 
 const particlesOptions = {
   particles: {
@@ -23,34 +22,51 @@ const particlesOptions = {
   }
 }
 
-const app = new Clarifai.App({
- apiKey: '859be558cf2c4cba8a85543abbd6f210'
-});
-
-class App extends Component {
-  constructor(){
-    super();
-    this.state = {
+const initialState = {
       input:'' , 
       imageUrl:'',
       ingredients: {},
       route: 'signin', 
       isSignedIn: false, 
-    }
+      user: {
+        id: '',
+        name: '',
+        email: '',
+        entries: 0,
+        joined: ''
+      }
+    
+}
+
+class App extends Component {
+  constructor(){
+    super();
+    this.state = initialState;
   }
 
+  loadUser = (data) => {
+    this.setState({ user:{
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      entries: data.entries,
+      joined: data.joined
+    }})
+  }
+
+
+
   onInputChange = (event) => {
-    const clarifaiData = this.setState({input: event.target.value});
+     this.setState({input: event.target.value});
   }
 
   calculateIngredients = (data) => {
     const foodData = data.outputs[0].data.concepts;
     const ingred = document.getElementById("ingredients");
-    const ingredArr = [];
     foodData.forEach(function(e, index){
       let newli = document.createElement("li");
       newli.setAttribute('class','foods');
-      newli.innerHTML = [index + 1] + ':' + ' ' + e.name;
+      newli.innerHTML = [index + 1] + ':' +  e.name;
       ingred.appendChild(newli);
     })
 
@@ -59,13 +75,37 @@ class App extends Component {
 
   onButtonSubmit = () => {
       this.setState({imageUrl: this.state.input});
-      app.models.predict( Clarifai.FOOD_MODEL, this.state.input).then(response => this.calculateIngredients(response))
-      .catch(err => console.log(err))
+        fetch('https://still-lowlands-82191.herokuapp.com/imageurl', {
+            method: 'post',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              input: this.state.input
+            })
+        })
+        .then(response => response.json())
+      .then(response => {
+        if(response){
+          fetch('https://still-lowlands-82191.herokuapp.com/image', {
+            method: 'put',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              id: this.state.user.id
+            })
+          })
+          .then(response => response.json())
+          .then(count => {
+            this.setState(Object.assign(this.state.user, {entries: count}))
+          })
+          .catch(console.log)
+        }
+        this.calculateIngredients(response);
+      })
+    .catch(err => console.log(err))
   }
 
   onRouteChange = (route) => {
     if(route === 'signout') {
-      this.setState({isSignedIn: false})
+      this.setState(initialState)
     } else if(route === 'home') {
       this.setState({isSignedIn: true})
     }
@@ -82,14 +122,14 @@ class App extends Component {
         { this.state.route === 'home'
           ?<div>
               <Logo/>
-              <Rank/>
+              <Rank name={this.state.user.name} entries={this.state.user.entries}/>
               <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
               <FoodRecognition imageUrl={this.state.imageUrl}/>
             </div>
           : (
               this.state.route === 'signin'
-              ?<Signin onRouteChange={this.onRouteChange}/>
-              :<Register onRouteChange={this.onRouteChange}/>
+              ?<Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
+              :<Register loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
             )
           
         }
